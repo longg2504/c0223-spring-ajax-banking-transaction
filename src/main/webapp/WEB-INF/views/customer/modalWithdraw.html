@@ -1,0 +1,42 @@
+<th:block th:fragment="modalWithdraw">
+    <div class="modal fade" id="mdWithdraw" tabindex="-1" aria-hidden="true" data-bs-backdrop="static"
+         data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="exampleModalLabel">Modal Withdraw</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="error-area hide"></div>
+                    <form method="post">
+                        <div class="row mb-3">
+                            <div class="col-lg-6">
+                                <label for="fullNameWd">Full Name</label>
+                                <input type="text" id="fullNameWd" class="form-control" readonly>
+                            </div>
+                            <div class="col-lg-6">
+                                <label for="emailWd">Email</label>
+                                <input type="email" id="emailWd" class="form-control" readonly>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-lg-6">
+                                <label for="balanceWd">Current balance</label>
+                                <input type="tel" id="balanceWd" class="form-control" readonly>
+                            </div>
+                            <div class="col-lg-6">
+                                <label for="transactionAmountWd">Transaction Amount</label>
+                                <input type="text" id="transactionAmountWd" class="form-control">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" id="btnWithdraw" class="btn btn-outline-success">Withdraw</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</th:block>

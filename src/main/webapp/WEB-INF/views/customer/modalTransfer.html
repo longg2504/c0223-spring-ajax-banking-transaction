@@ -1,0 +1,53 @@
+<th:block th:fragment="modalTransfer">
+    <div class="modal fade" id="mdTransfer" tabindex="-1" aria-hidden="true" data-bs-backdrop="static"
+         data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="exampleModalLabel">Modal transfer</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="error-area hide"></div>
+                    <form method="post">
+                        <div class="row mb-3">
+                            <div class="col-lg-4">
+                                <label for="fullNameSent">Full Name</label>
+                                <input type="text" id="fullNameSent" class="form-control" readonly>
+                            </div>
+                            <div class="col-lg-4">
+                                <label for="recipientSelect">Recipient</label>
+                                <select class="form-select" name="recipient.id" id="recipientSelect">
+                                    <option value="" selected disabled>Select recipient</option>
+                                </select>
+                            </div>
+                            <div class="col-lg-4">
+                                <label for="balanceSent">Current balance</label>
+                                <input type="tel" id="balanceSent" class="form-control" readonly>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+
+                            <div class="col-lg-4">
+                                <label for="transactionAmountSent">Transaction Amount</label>
+                                <input type="text" id="transactionAmountSent" class="form-control">
+                            </div>
+                            <div class="col-lg-4">
+                                <label for="transactionAmountFee">Transaction Fee (10%)</label>
+                                <input type="text" id="transactionAmountFee" class="form-control" readonly>
+                            </div>
+                            <div class="col-lg-4">
+                                <label for="transactionAmountTotal">Transaction Total</label>
+                                <input type="text" id="transactionAmountTotal" class="form-control">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" id="btnTransfer" class="btn btn-outline-success">Transfer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</th:block>
