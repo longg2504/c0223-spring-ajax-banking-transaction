@@ -61,43 +61,37 @@
         </table>
     </div>
 </div>
-</div>
-
-<th:block th:replace="customer/modalCreate"/>
-<th:block th:replace="customer/modalDeposit"/>
-<th:block th:replace="customer/modalUpdate"/>
-<th:block th:replace="customer/modalTransfer"/>
-<th:block th:replace="customer/modalWithdraw"/>
 
 
 <script src="/assets/jquery/jquery-3.7.0.min.js"></script>
-<script src="/assets/bootstrap/v-5.3.0/js/bootstrap.bundle.min.js"></script>
+<script src="/assets/bootstrap/v-5.3.0/js/bootstrap.bundle.js"></script>
 <script src="/assets/sweetalert2/sweetalert2.all.min.js"></script>
 <script src="/assets/js/app.js"></script>
 <script src="/assets/js/jquery.validate.min.js"></script>
 
-<script>
 
+<th:block th:replace="customer/modalCreate"/>
+<th:block th:replace="customer/modalDeposit"/>
+<th:block th:replace="customer/modalUpdate"/>
+<th:block th:replace="customer/modalWithdraw"/>
+<th:block th:replace="customer/modalTransfer"/>
+
+
+<script>
     const page = {
         url: {
             getAllCustomers: App.API_CUSTOMER,
             getCustomerById: App.API_CUSTOMER,
             createCustomer: App.API_CUSTOMER,
-            updateCustomer: App.API_CUSTOMER,
-            incrementBalance: App.API_CUSTOMER,
-            descrementBalance: App.API_CUSTOMER,
+            updateCustomer: App.API_CUSTOMER + '/update',
             deposit: App.API_DEPOSIT,
-            withdraw: App.API_WITHDRAW
+            withdraw: App.API_CUSTOMER + '/withdraw',
+            delete: App.API_CUSTOMER + '/delete',
+            transfer: App.API_CUSTOMER + '/transfers',
         },
-        elements: {
-
-        },
-        loadData: {
-
-        },
-        commands: {
-
-        },
+        elements: {},
+        loadData: {},
+        commands: {},
         dialogs: {
             elements: {},
             commands: {}
@@ -141,21 +135,25 @@
     page.dialogs.elements.transactionAmountDep = $('#transactionAmountDep');
     page.dialogs.elements.btnDeposit = $('#btnDeposit');
 
-    page.dialogs.elements.modalWithdraw = $('#mdWithdraw');
+    page.dialogs.elements.modalWithdraw = $('#modalWithdraw');
+    page.dialogs.elements.errorAreaWithdraw = $('#modalWithdraw .error-area');
+    page.dialogs.elements.frmWithdraw = $('#frmWithdraw');
     page.dialogs.elements.fullNameWd = $('#fullNameWd');
     page.dialogs.elements.emailWd = $('#emailWd');
     page.dialogs.elements.balanceWd = $('#balanceWd');
     page.dialogs.elements.transactionAmountWd = $('#transactionAmountWd');
     page.dialogs.elements.btnWithdraw = $('#btnWithdraw');
 
-    page.dialogs.elements.modalTransfer = $('#mdTransfer');
+    page.dialogs.elements.modalTransfer = $('#modalTransfer');
+    page.dialogs.elements.errorAreaTransfer = $('#modalTransfer .error-area');
+    page.dialogs.elements.frmTransfer = $('#frmTransfer');
     page.dialogs.elements.fullNameSent = $('#fullNameSent');
     page.dialogs.elements.balanceSent = $('#balanceSent');
+    page.dialogs.elements.recipientSelect = $('#recipientSelect');
     page.dialogs.elements.transactionAmountSent = $('#transactionAmountSent');
     page.dialogs.elements.transactionAmountFee = $('#transactionAmountFee');
+    page.dialogs.elements.transactionAmount = $('#transactionAmountTotal')
     page.dialogs.elements.btnTransfer = $('#btnTransfer');
-
-
 
 
     page.commands.renderCustomer = (obj) => {
@@ -300,6 +298,13 @@
 
                 const currentRow = $('#tr_' + customerId);
                 currentRow.replaceWith(str);
+                Swal.fire({
+                    position: 'center',
+                    icon: 'success',
+                    title: 'Cập Nhật khách hàng thành công',
+                    showConfirmButton: false,
+                    timer: 1500
+                })
 
                 page.dialogs.elements.modalUpdate.modal('hide');
             })
@@ -319,7 +324,7 @@
             })
     }
     //Deposit
-    page.dialogs.commands.deposit = (customer, deposit) => {
+    page.dialogs.commands.deposit = () => {
         // const currentBalance = customer.balance;
         const transactionAmount = $('#transactionAmountDep').val();
         // const newBalance = currentBalance + transactionAmount;
@@ -373,22 +378,126 @@
             })
 
     }
-    //delete
-    page.dialogs.commands.doDelete = (id) => {
+    //Withdraw
+    page.dialogs.commands.withdraw = () => {
+        // const currentBalance = customer.balance;
+        const transactionAmount = $('#transactionAmountWd').val();
+        // const newBalance = currentBalance + transactionAmount;
+        // customer.balance = newBalance;
+        //
+        // deposit.id = null;
+        // deposit.customerId = customerId;
+        // deposit.transactionAmount = transactionAmount;
+
         const obj = {
-            deleted: 0
+            transactionAmount
         }
 
+        $.ajax({
+            headers: {
+                'accept': 'application/json',
+                'content-type': 'application/json'
+            },
+            type: 'POST',
+            url: page.url.withdraw + '/' + customerId,
+            data: JSON.stringify(obj)
+        })
+            .done((data) => {
+                const str = page.commands.renderCustomer(data);
+
+                const currentRow = $('#tr_' + customerId);
+                currentRow.replaceWith(str);
+
+                page.dialogs.elements.modalWithdraw.modal('hide');
+                Swal.fire({
+                    position: 'center',
+                    icon: 'success',
+                    title: 'Rút tiền thành công',
+                    showConfirmButton: false,
+                    timer: 1500
+                })
+            })
+            .fail((jqXHR) => {
+                const responseJSON = jqXHR.responseJSON;
+
+                page.dialogs.elements.errorAreaWithdraw.empty();
+                let str = '';
+
+                $.each(responseJSON, (k, v) => {
+                    str += `<label for="${k}Dep">${v}</label>`
+                })
+
+                page.dialogs.elements.errorAreaWithdraw.append(str).removeClass('hide').addClass('show');
+
+                console.log(jqXHR);
+            })
+
+    }
+    //Transfer
+    page.dialogs.commands.transfer = () => {
+        const transferAmount = page.dialogs.elements.transactionAmountSent.val();
+        const recipientId = page.dialogs.elements.recipientSelect.val();
+
+        const obj = {
+            senderId: customerId,
+            recipientId: recipientId,
+            transferAmount,
+        }
+        return $.ajax({
+            headers: {
+                'accept': 'application/json',
+                'content-type': 'application/json'
+            },
+            type: 'POST',
+            url: page.url.transfer + '/' + customerId,
+            data: JSON.stringify(obj)
+        })
+            .done((data) => {
+                for (let i = 0; i < data.length; i++) {
+                    let str = page.commands.renderCustomer(data[i]);
+                    let currentRow = $('#tr_' + data[i].id);
+                    currentRow.replaceWith(str);
+                }
+
+                page.dialogs.elements.modalTransfer.modal('hide');
+                Swal.fire({
+                    position: 'center',
+                    icon: 'success',
+                    title: 'Chuyển tiền thành công',
+                    showConfirmButton: false,
+                    timer: 1500
+                })
+
+            })
+            .fail((jqXHR) => {
+                const responseJSON = jqXHR.responseJSON;
+
+                page.dialogs.elements.errorAreaTransfer.empty();
+                let str = '';
+
+                $.each(responseJSON, (k, v) => {
+                    str += `<label for="${k}Dep">${v}</label>`
+                })
+
+                page.dialogs.elements.errorAreaTransfer.append(str).removeClass('hide').addClass('show');
+
+                console.log(jqXHR);
+            })
+    }
+
+    //delete
+    page.dialogs.commands.doDelete = (id) => {
         return $.ajax({
             headers: {
                 'accept': 'application/json',
                 'content-type': 'application/json'
             },
             type: 'PATCH',
-            url: page.url.getCustomerById + '/' + id,
-            data: JSON.stringify(obj)
+            url: page.url.delete + '/' + id
         })
     }
+
+
     // update
     page.commands.handleAddEventShowModalUpdate = (customerId) => {
         page.commands.getCustomerById(customerId).then((data) => {
@@ -415,6 +524,38 @@
 
 
             page.dialogs.elements.modalDeposit.modal('show');
+        })
+            .catch((error) => {
+                console.log(error);
+            });
+    }
+    //Withdraw
+    page.commands.handleAddEventShowModalWithdraw = (customerId) => {
+        page.commands.getCustomerById(customerId).then((data) => {
+            customer = data;
+            page.dialogs.elements.fullNameWd.val(customer.fullName);
+            page.dialogs.elements.emailWd.val(customer.email);
+            page.dialogs.elements.balanceWd.val(customer.balance);
+            page.dialogs.elements.transactionAmountWd.val(0);
+
+
+            page.dialogs.elements.modalWithdraw.modal('show');
+        })
+            .catch((error) => {
+                console.log(error);
+            });
+    }
+    //Transfer
+    page.commands.HandleAddEventShowModalTransfer = (customerId) => {
+        page.commands.getCustomerById(customerId).then((data) => {
+            if (data !== {}) {
+                page.dialogs.elements.fullNameSent.val(data.fullName);
+                page.dialogs.elements.balanceSent.val(data.balance);
+                page.dialogs.elements.recipientSelect.val(data.recipientSelect);
+                page.dialogs.elements.transactionAmountSent.val('');
+                page.dialogs.elements.transactionAmount.val('');
+                page.dialogs.elements.modalTransfer.modal('show');
+            }
         })
             .catch((error) => {
                 console.log(error);
@@ -451,10 +592,44 @@
         })
     }
 
+    $(document).ready(function () {
+        page.commands.getCustomers();
+    });
 
 
+    $(document).ready(function () {
+
+        page.dialogs.elements.transactionAmountSent.on('input', function () {
+            const transferAmount = parseFloat($(this).val());
+            const fee = 10;
+            const feeAmount = transferAmount * fee / 100;
+            const transactionAmount = transferAmount + feeAmount
 
 
+            page.dialogs.elements.transactionAmount.val(transactionAmount);
+        });
+    });
+
+    page.commands.getCustomers = (customerId) => {
+        $.ajax({
+            url: page.url.getCustomerById,
+            type: 'GET',
+            dataType: 'json',
+            success: function (customers) {
+                page.dialogs.elements.recipientSelect.empty();
+                page.dialogs.elements.recipientSelect.append($('<option>').val('').text('Select recipient'));
+
+                $.each(customers, function (index, customer) {
+                    if (customer.id !== customerId) {
+                        page.dialogs.elements.recipientSelect.append($('<option>').val(customer.id).text(customer.id + '-' + customer.fullName));
+                    }
+                });
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.log('Error: ' + textStatus + ' ' + errorThrown);
+            }
+        });
+    }
 
 
     page.initializeControlEvent = () => {
@@ -479,19 +654,19 @@
         page.elements.tbCustomerBody.on('click', '.withdraw', function () {
             customerId = $(this).data('id');
             console.log(customerId)
-            page.commands.handleAddEventShowModalWithDraw(customerId);
+            page.commands.handleAddEventShowModalWithdraw(customerId);
         })
 
-        page.elements.tbCustomerBody.on('click' , '.delete' ,function() {
+        page.elements.tbCustomerBody.on('click', '.delete', function () {
             customerId = $(this).data('id');
             console.log(customerId)
             page.commands.handleAddEventConfirmDelete(customerId);
         })
 
-        page.elements.tbCustomerBody.on('click', '.transfer' , function () {
+        page.elements.tbCustomerBody.on('click', '.transfer', function () {
             customerId = $(this).data('id');
-            getCustomers(customerId);
-            page.commands.HandleAddEventTransfer(customerId)
+            page.commands.getCustomers(customerId);
+            page.commands.HandleAddEventShowModalTransfer(customerId);
         })
 
         page.dialogs.elements.btnUpdate.on('click', () => {
@@ -506,38 +681,14 @@
             page.dialogs.elements.frmDeposit.trigger('submit');
 
         })
-        // page.dialogs.elements.btnWithdraw.on('click', () => {
-        //
-        //     const currentBalance = customer.balance;
-        //     const transactionAmount = +$('#transactionAmountWd').val();
-        //     console.log(transactionAmount);
-        //     const newBalance = currentBalance - transactionAmount;
-        //     if (transactionAmount > currentBalance) {
-        //         Swal.fire({
-        //             icon: 'error',
-        //             title: 'Oops...',
-        //             text: 'Transaction amount cannot be greater than current balance!'
-        //         });
-        //         return;
-        //     }
-        //     if (isNaN(transactionAmount) || transactionAmount < 0 || !transactionAmount) {
-        //         Swal.fire({
-        //             icon: 'error',
-        //             title: 'Oops...',
-        //             text: 'Transaction amount must be a positive number !!!'
-        //         });
-        //         return;
-        //     }
-        //
-        //     customer.balance = newBalance;
-        //
-        //     withdraw.id = null;
-        //     withdraw.customerId = customerId;
-        //     withdraw.transactionAmount = transactionAmount;
-        //
-        //     page.dialogs.commands.withdraw(customer, withdraw);
-        //
-        // })
+        page.dialogs.elements.btnWithdraw.on('click', () => {
+            page.dialogs.elements.frmWithdraw.trigger('submit');
+        })
+
+        page.dialogs.elements.btnTransfer.on('click', () => {
+            page.dialogs.elements.frmTransfer.trigger('submit');
+        });
+
 
         page.dialogs.elements.modalCreate.on("hidden.bs.modal", function () {
             page.dialogs.commands.closeModalCreate();
@@ -548,7 +699,7 @@
     page.loadData = () => {
         page.commands.getAllCustomers();
     }
-
+    //Validate FrontEnd
     page.dialogs.elements.frmDeposit.validate({
         rules: {
             transactionAmountDep: {
@@ -564,7 +715,7 @@
         errorPlacement: function (error, element) {
             error.appendTo("#modalDeposit .error-area");
         },
-        showErrors: function(errorMap, errorList) {
+        showErrors: function (errorMap, errorList) {
             if (this.numberOfInvalids() > 0) {
                 page.dialogs.elements.errorAreaDeposit.removeClass("hide").addClass("show");
             } else {
@@ -577,41 +728,69 @@
             page.dialogs.commands.deposit(customer, deposit);
         }
     })
+    page.dialogs.elements.frmWithdraw.validate({
+        rules: {
+            transactionAmountWd: {
+                required: true
+            }
+        },
+        messages: {
+            transactionAmountWd: {
+                required: 'Số tiền muốn nạp là bắt buộc'
+            }
+        },
+        errorLabelContainer: "#modalWithdraw .error-area",
+        errorPlacement: function (error, element) {
+            error.appendTo("#modalWithdraw .error-area");
+        },
+        showErrors: function (errorMap, errorList) {
+            if (this.numberOfInvalids() > 0) {
+                page.dialogs.elements.errorAreaWithdraw.removeClass("hide").addClass("show");
+            } else {
+                page.dialogs.elements.errorAreaWithdraw.removeClass("show").addClass("hide").empty();
+                $("#frmWithdraw input.error").removeClass("error");
+            }
+            this.defaultShowErrors();
+        },
+        submitHandler: function () {
+            page.dialogs.commands.withdraw(customer, withdraw);
+        }
+    })
 
     page.dialogs.elements.frmCreate.validate({
         rules: {
             fullNameCre: {
                 required: true
             },
-            emailCre:{
-                required:true
+            emailCre: {
+                required: true
             },
-            phoneCre:{
-                required:true
+            phoneCre: {
+                required: true
             },
-            addressCre:{
-                required:true
+            addressCre: {
+                required: true
             }
         },
         messages: {
             fullNameCre: {
                 required: 'Họ tên là bắt buộc'
             },
-            emailCre:{
-                required:'email là bắt buộc'
+            emailCre: {
+                required: 'email là bắt buộc'
             },
             phoneCre: {
                 required: 'Số điện thoại là bắt buộc'
             },
-            addressCre:{
-                required:'Địa chỉ là bắt buộc'
+            addressCre: {
+                required: 'Địa chỉ là bắt buộc'
             }
         },
         errorLabelContainer: "#modalCreate .error-area",
         errorPlacement: function (error, element) {
             error.appendTo("#modalCreate .error-area");
         },
-        showErrors: function(errorMap, errorList) {
+        showErrors: function (errorMap, errorList) {
             if (this.numberOfInvalids() > 0) {
                 page.dialogs.elements.errorAreaCreate.removeClass("hide").addClass("show");
             } else {
@@ -630,35 +809,35 @@
             fullNameUp: {
                 required: true
             },
-            emailUp:{
-                required:true
+            emailUp: {
+                required: true
             },
-            phoneUp:{
-                required:true
+            phoneUp: {
+                required: true
             },
-            addressUp:{
-                required:true
+            addressUp: {
+                required: true
             }
         },
         messages: {
             fullNameUp: {
                 required: 'Họ tên là bắt buộc'
             },
-            emailUp:{
-                required:'email là bắt buộc'
+            emailUp: {
+                required: 'email là bắt buộc'
             },
             phoneUp: {
                 required: 'Số điện thoại là bắt buộc'
             },
-            addressUp:{
-                required:'Địa chỉ là bắt buộc'
+            addressUp: {
+                required: 'Địa chỉ là bắt buộc'
             }
         },
         errorLabelContainer: "#modalUpdate .error-area",
         errorPlacement: function (error, element) {
             error.appendTo("#modalUpdate .error-area");
         },
-        showErrors: function(errorMap, errorList) {
+        showErrors: function (errorMap, errorList) {
             if (this.numberOfInvalids() > 0) {
                 page.dialogs.elements.errorAreaUpdate.removeClass("hide").addClass("show");
             } else {
@@ -672,6 +851,37 @@
         }
     })
 
+    page.dialogs.elements.frmTransfer.validate({
+        rules: {
+            transferAmount: {
+                required: true,
+                number:true,
+                maxlength: 15
+            }
+        },
+        messages: {
+            transferAmount: {
+                required: 'Số tiền không được để trống',
+            }
+        },
+        errorLabelContainer: "#modalTransfer .error-area",
+        errorPlacement: function (error, element) {
+            error.appendTo("#modalTransfer .error-area");
+        },
+        showErrors: function (errorMap, errorList) {
+            if (this.numberOfInvalids() > 0) {
+                page.dialogs.elements.errorAreaTransfer.removeClass("hide").addClass("show");
+            } else {
+                page.dialogs.elements.errorAreaTransfer.removeClass("show").addClass("hide").empty();
+                $("#frmTransfer input.error").removeClass("error");
+            }
+            this.defaultShowErrors();
+        },
+        submitHandler: function () {
+            page.dialogs.commands.transfer();
+        }
+    })
+
 
     $(() => {
         page.loadData();
@@ -679,10 +889,6 @@
         page.initializeControlEvent();
     })
 
-
-
-
 </script>
-
-
 </body>
+</html>

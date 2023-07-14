@@ -1,5 +1,5 @@
 <th:block th:fragment="modalWithdraw">
-    <div class="modal fade" id="mdWithdraw" tabindex="-1" aria-hidden="true" data-bs-backdrop="static"
+    <div class="modal fade" id="modalWithdraw" tabindex="-1" aria-hidden="true" data-bs-backdrop="static"
          data-bs-keyboard="false">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
@@ -9,7 +9,7 @@
                 </div>
                 <div class="modal-body">
                     <div class="error-area hide"></div>
-                    <form method="post">
+                    <form method="post" id="frmWithdraw">
                         <div class="row mb-3">
                             <div class="col-lg-6">
                                 <label for="fullNameWd">Full Name</label>

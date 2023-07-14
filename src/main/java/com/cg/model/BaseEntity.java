@@ -32,7 +32,7 @@ public abstract class BaseEntity {
     private Long updatedBy;
 
 
-    public boolean isDeleted() {
+    public boolean getDeleted() {
         return deleted;
     }
 

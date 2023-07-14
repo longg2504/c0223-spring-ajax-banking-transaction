@@ -3,9 +3,11 @@ package com.cg.service.customer;
 import com.cg.model.Customer;
 import com.cg.model.Deposit;
 import com.cg.model.Transfer;
+import com.cg.model.Withdraw;
 import com.cg.repository.CustomerRepository;
 import com.cg.repository.DepositRepository;
 import com.cg.repository.TransferRepository;
+import com.cg.repository.WithdrawRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +30,10 @@ public class CustomerServiceImpl implements ICustomerService {
     @Autowired
     private TransferRepository transferRepository;
 
+    @Autowired
+    private WithdrawRepository withdrawRepository;
+
+
     @Override
     public List<Customer> findAll() {
         return customerRepository.findAll();
@@ -36,6 +42,11 @@ public class CustomerServiceImpl implements ICustomerService {
     @Override
     public Optional<Customer> findById(Long id) {
         return customerRepository.findById(id);
+    }
+
+    @Override
+    public List<Customer> findAllByDeletedIsFalse() {
+        return customerRepository.findAllByDeletedIsFalse();
     }
 
     @Override
@@ -66,6 +77,22 @@ public class CustomerServiceImpl implements ICustomerService {
     }
 
     @Override
+    public Customer withdraw(Withdraw withdraw) {
+        withdraw.setId(null);
+        withdrawRepository.save(withdraw);
+
+        Customer customer = withdraw.getCustomer();
+        BigDecimal transactionAmount = withdraw.getTransactionAmount();
+
+        customerRepository.decrementBalance(customer.getId(), transactionAmount);
+
+        BigDecimal newBalance = customer.getBalance().subtract(transactionAmount);
+        customer.setBalance(newBalance);
+
+        return customer;
+    }
+
+    @Override
     public void incrementBalance(Long id, BigDecimal amount) {
         customerRepository.incrementBalance(id, amount);
     }
@@ -84,9 +111,11 @@ public class CustomerServiceImpl implements ICustomerService {
         transfer.setFeesAmount(feesAmount);
         transfer.setTransactionAmount(transactionAmount);
 
+
         customerRepository.decrementBalance(sender.getId(), transactionAmount);
 
         customerRepository.incrementBalance(recipient.getId(), transferAmount);
+
 
         transferRepository.save(transfer);
     }
